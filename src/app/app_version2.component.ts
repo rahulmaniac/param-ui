@@ -85,30 +85,31 @@ interface Parameter {
       <h4>🧩 Parameters ({{filteredParams.length}})</h4>
 
       <!-- Bucket View -->
-<div *ngIf="showBuckets" class="bucket-panel">
-  <h5>Too many results. Refine further:</h5>
-
-  <div
-    class="bucket"
-    *ngFor="let b of buckets"
-    (click)="selectBucket(b.name)">
-    {{b.name}} ({{b.count}})
-  </div>
-</div>
-
-<!-- Parameter List -->
-<div *ngIf="!showBuckets" class="viewport">
-  <div
-    *ngFor="let p of filteredParams"
-    class="param-row"
-    [class.readonly]="!p.editable"
-    (click)="selectParam(p)"
-    [title]="p.description">
-
-    {{p.name}}
-    <span class="lock" *ngIf="!p.editable">🔒</span>
-  </div>
-</div>
+      <div *ngIf="mode === 'BUCKET'" class="bucket-panel">
+        <h5>Too many results. Refine further:</h5>
+      
+        <div
+          class="bucket"
+          *ngFor="let b of buckets"
+          (click)="selectBucket(b.name)">
+          {{b.name}} ({{b.count}})
+        </div>
+      </div>
+      
+      <!-- Parameter List -->
+      <div *ngIf="mode === 'LIST'" class="viewport">
+        <div
+          *ngFor="let p of filteredParams"
+          class="param-row"
+          [class.readonly]="!p.editable"
+          (click)="selectParam(p)"
+          [title]="p.description">
+      
+          {{p.name}}
+          <span class="lock" *ngIf="!p.editable">🔒</span>
+        </div>
+      </div>
+      
 
 
 
@@ -212,7 +213,8 @@ export class AppComponent implements OnInit {
   filteredParams: Parameter[] = [];
   selectedParam?: Parameter;
   selectedCategory = '';
-  showBuckets = false;
+  // showBuckets = false;
+  mode: 'LIST' | 'BUCKET' = 'LIST';
   buckets: { name: string; count: number }[] = [];
   activeBucket = '';
 
@@ -249,90 +251,92 @@ export class AppComponent implements OnInit {
 
   selectCategory(path: string) {
     this.selectedCategory = path.split('/').pop()!;
+    this.activeBucket = '';                 // reset bucket when changing category
     this.breadcrumb = ['All', ...path.split('/')];
     this.applyFilters();
   }
+  
 
   selectParam(p: Parameter) {
     this.selectedParam = p;
   }
 
   applyIntent(intent: string) {
+    this.activeBucket = '';
+  
     if (intent === 'performance') {
       this.selectedCategory = '';
-      this.filteredParams = this.parameters.filter((p) =>
-        ['CPU', 'Memory', 'IO'].includes(p.category)
-      );
       this.breadcrumb = ['Intent', 'Performance'];
     }
-
+  
     if (intent === 'power') {
-      this.filteredParams = this.parameters.filter(
-        (p) => p.category === 'Thermal'
-      );
+      this.selectedCategory = 'Thermal';
       this.breadcrumb = ['Intent', 'Power'];
     }
-
+  
     this.applyFilters();
   }
+
 
   resetFilters() {
     this.searchText = '';
     this.editableOnly = false;
     this.selectedCategory = '';
+    this.activeBucket = '';
     this.breadcrumb = ['All'];
-    this.filteredParams = [...this.parameters];
+    this.applyFilters();
   }
+  
 
   applyFilters() {
-    const result = this.parameters.filter((p) => {
+    let result = this.parameters.filter(p => {
       const matchesSearch = p.name
         .toLowerCase()
         .includes(this.searchText.toLowerCase());
-
+  
       const matchesEditable = !this.editableOnly || p.editable;
-
+  
       const matchesCategory =
         !this.selectedCategory || p.category === this.selectedCategory;
-
+  
       const matchesBucket =
-        !this.activeBucket || p.tags.includes(this.activeBucket.toLowerCase());
-
-      return (
-        matchesSearch && matchesEditable && matchesCategory && matchesBucket
-      );
+        !this.activeBucket || p.tags.includes(this.activeBucket);
+  
+      return matchesSearch && matchesEditable && matchesCategory && matchesBucket;
     });
-
-    // 👉 If too many results, switch to bucket view
-    if (result.length > 200) {
-      this.showBuckets = true;
+  
+    // Decide mode
+    if (result.length > 200 && !this.activeBucket) {
+      this.mode = 'BUCKET';
       this.createBuckets(result);
       this.filteredParams = [];
     } else {
-      this.showBuckets = false;
+      this.mode = 'LIST';
       this.filteredParams = result;
     }
   }
+  
 
   createBuckets(params: Parameter[]) {
     const map: Record<string, number> = {};
-
-    params.forEach((p) => {
-      p.tags.forEach((tag) => {
+  
+    params.forEach(p => {
+      p.tags.forEach(tag => {
         map[tag] = (map[tag] || 0) + 1;
       });
     });
-
-    this.buckets = Object.keys(map).map((tag) => ({
+  
+    this.buckets = Object.keys(map).map(tag => ({
       name: tag.toUpperCase(),
-      count: map[tag],
+      count: map[tag]
     }));
   }
+  
 
   selectBucket(bucket: string) {
     this.activeBucket = bucket.toLowerCase();
-    this.showBuckets = false;
     this.breadcrumb = ['All', 'Bucket', bucket];
     this.applyFilters();
   }
+  
 }
