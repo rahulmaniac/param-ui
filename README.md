@@ -45,13 +45,17 @@ UI scales to thousands of parameters without degrading usability.
 
 Parameters are organized into a hierarchical tree:
 
+### 🌳 Package Category Tree
+
+```
 Package
 ├── Performance
-│ ├── CPU
-│ ├── Memory
-│ └── IO
+│   ├── CPU
+│   ├── Memory
+│   └── IO
 ├── Power
-│ └── Thermal
+│   └── Thermal
+```
 
 
 This allows users to progressively narrow the scope instead of searching through a flat list.
@@ -127,7 +131,7 @@ This version demonstrates the recommended UX approach.
 ---
 
 ## 🧭 User Flow Summary
-
+```
 Dashboard
 ↓
 Select Intent / Category
@@ -140,6 +144,7 @@ Select Bucket
 View Refined Parameters
 ↓
 Inspect Context / Modify Allowed Fields
+```
 
 
 ---
